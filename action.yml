@@ -55,6 +55,15 @@ inputs:
   dependencies:
     description: "A list of helm repositories required to verify dependencies in the format '<name>,<url>;<name>,<url>'"
     required: false
+  key:
+    description: "The GPG key to sign the chart with"
+    required: false
+  private_key:
+    description: "The private GPG key to sign the chart with"
+    required: false
+  passphrase:
+    description: "The passphrase for the private GPG key"
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
@@ -75,3 +84,6 @@ runs:
     - ${{ inputs.index_dir }}
     - ${{ inputs.enterprise_url }}
     - ${{ inputs.dependencies }}
+    - ${{ inputs.key }}
+    - ${{ inputs.private_key }}
+    - ${{ inputs.passphrase }}

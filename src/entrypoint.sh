@@ -33,6 +33,9 @@ CHART_VERSION=${13}
 INDEX_DIR=${14}
 ENTERPRISE_URL=${15}
 DEPENDENCIES=${16}
+KEY=${17}
+PRIVATE_KEY=${18}
+PASSPHRASE=${19}
 
 CHARTS=()
 CHARTS_TMP_DIR=$(mktemp -d)
@@ -163,7 +166,14 @@ package() {
       CHART_VERSION_CMD=" --version $CHART_VERSION"
   fi
 
-  helm package ${CHARTS[*]} --destination ${CHARTS_TMP_DIR} $APP_VERSION_CMD$CHART_VERSION_CMD
+  if [[ ! -z "$KEY" ]]; then
+      echo "$PRIVATE_KEY" | gpg --batch --import
+      gpg --batch --pinentry-mode loopback --yes --passphrase $PASSPHRASE --export-secret-key > $HOME/secring.gpg
+      echo $PASSPHRASE > $HOME/passphrase.txt
+      SIGN_CMD=" --sign --key $KEY --keyring $HOME/secring.gpg --passphrase-file $HOME/passphrase.txt"
+  fi
+
+  helm package ${CHARTS[*]} --destination ${CHARTS_TMP_DIR} $SIGN_CMD$APP_VERSION_CMD$CHART_VERSION_CMD
 }
 
 upload() {
@@ -186,11 +196,13 @@ upload() {
     echo "Found index, merging changes"
     helm repo index ${CHARTS_TMP_DIR} --url ${CHARTS_URL} --merge "${INDEX_DIR}/index.yaml"
     mv -f ${CHARTS_TMP_DIR}/*.tgz ${TARGET_DIR}
+    mv -f ${CHARTS_TMP_DIR}/*.prov ${TARGET_DIR} 2>/dev/null || true
     mv -f ${CHARTS_TMP_DIR}/index.yaml ${INDEX_DIR}/index.yaml
   else
     echo "No index found, generating a new one"
     helm repo index ${CHARTS_TMP_DIR} --url ${CHARTS_URL}
     mv -f ${CHARTS_TMP_DIR}/*.tgz ${TARGET_DIR}
+    mv -f ${CHARTS_TMP_DIR}/*.prov ${TARGET_DIR} 2>/dev/null || true
     mv -f ${CHARTS_TMP_DIR}/index.yaml ${INDEX_DIR}
   fi
 
