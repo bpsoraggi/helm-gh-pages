@@ -170,7 +170,8 @@ package() {
       echo "$PRIVATE_KEY" | gpg --batch --import
       gpg --batch --pinentry-mode loopback --yes --passphrase "$PASSPHRASE" --export-secret-key > $HOME/secring.gpg
       echo "$PASSPHRASE" > $HOME/passphrase.txt
-      SIGN_CMD=" --sign --key $KEY --keyring $HOME/secring.gpg --passphrase-file $HOME/passphrase.txt"
+      SIGN_CMD=" --sign --key '"$KEY"' --keyring $HOME/secring.gpg --passphrase-file $HOME/passphrase.txt"
+      echo "Sign command: $SIGN_CMD"
   fi
 
   helm package ${CHARTS[*]} --destination ${CHARTS_TMP_DIR} $SIGN_CMD$APP_VERSION_CMD$CHART_VERSION_CMD
